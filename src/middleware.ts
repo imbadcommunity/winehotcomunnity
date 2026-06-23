@@ -17,86 +17,90 @@ const authRoutes = ['/login', '/cadastro', '/recuperar-senha']
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return response
-  }
-
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        },
-      },
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return response
     }
-  )
 
-  // Refresh session token
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            )
+            response = NextResponse.next({ request })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
 
-  const { pathname } = request.nextUrl
+    // Refresh session token
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  // Redirect authenticated users away from auth pages
-  if (user && authRoutes.some((route) => pathname.startsWith(route))) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
+    const { pathname } = request.nextUrl
 
-  // Check if route requires authentication
-  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route))
-  const isAdmin = adminRoutes.some((route) => pathname.startsWith(route))
-
-  if ((isProtected || isAdmin) && !user) {
-    const redirectUrl = new URL('/login', request.url)
-    redirectUrl.searchParams.set('redirect', pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // Check subscription for content routes
-  if (user && subscriptionRoutes.some((route) => pathname.startsWith(route))) {
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('status, expires_at')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single()
-
-    const isActive =
-      subscription &&
-      subscription.status === 'active' &&
-      new Date(subscription.expires_at) > new Date()
-
-    if (!isActive) {
-      return NextResponse.redirect(new URL('/upgrade', request.url))
-    }
-  }
-
-  // Check admin role
-  if (user && isAdmin) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || profile.role !== 'admin') {
+    // Redirect authenticated users away from auth pages
+    if (user && authRoutes.some((route) => pathname.startsWith(route))) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
+
+    // Check if route requires authentication
+    const isProtected = protectedRoutes.some((route) => pathname.startsWith(route))
+    const isAdmin = adminRoutes.some((route) => pathname.startsWith(route))
+
+    if ((isProtected || isAdmin) && !user) {
+      const redirectUrl = new URL('/login', request.url)
+      redirectUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // Check subscription for content routes
+    if (user && subscriptionRoutes.some((route) => pathname.startsWith(route))) {
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('status, expires_at')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .single()
+
+      const isActive =
+        subscription &&
+        subscription.status === 'active' &&
+        new Date(subscription.expires_at) > new Date()
+
+      if (!isActive) {
+        return NextResponse.redirect(new URL('/upgrade', request.url))
+      }
+    }
+
+    // Check admin role
+    if (user && isAdmin) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile || profile.role !== 'admin') {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    }
+  } catch (error) {
+    console.error('Middleware runtime error:', error)
   }
 
   return response
