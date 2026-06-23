@@ -1,3 +1,7 @@
+if (typeof (globalThis as { process?: unknown }).process === 'undefined') {
+  (globalThis as Record<string, unknown>).process = { env: {} };
+}
+
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
