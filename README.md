@@ -1,36 +1,142 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍷 Wine Hot Community
 
-## Getting Started
+Plataforma SaaS premium de cursos e comunidade, estilo Netflix.
 
-First, run the development server:
+## Stack Técnica
+
+- **Next.js 15** (App Router)
+- **React** + **TypeScript**
+- **Tailwind CSS v4**
+- **Supabase** (Auth, PostgreSQL, RLS)
+- **Vercel** deployment ready
+
+## 🚀 Instalação
+
+### 1. Clone e instale
+
+```bash
+cd wine-hot-community
+npm install
+```
+
+### 2. Configure o Supabase
+
+1. Crie um projeto em [supabase.com](https://supabase.com)
+2. Copie o arquivo de exemplo de variáveis de ambiente:
+
+```bash
+cp .env.local.example .env.local
+```
+
+3. Edite `.env.local` com suas credenciais:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
+SUPABASE_SERVICE_ROLE_KEY=sua-service-role-key
+```
+
+### 3. Configure o Banco de Dados
+
+Execute o schema SQL no Supabase:
+
+1. Acesse o **Supabase Dashboard** → **SQL Editor**
+2. Cole o conteúdo de `src/supabase/migrations/001_initial_schema.sql`
+3. Execute o SQL
+
+### 4. Configure o Google OAuth (Opcional)
+
+1. Acesse [Google Cloud Console](https://console.cloud.google.com)
+2. Crie um OAuth 2.0 Client ID
+3. No **Supabase Dashboard** → **Authentication** → **Providers** → **Google**
+4. Adicione o Client ID e Client Secret
+
+### 5. Crie um Admin
+
+Após registrar sua conta, execute no SQL Editor do Supabase:
+
+```sql
+UPDATE public.profiles SET role = 'admin' WHERE id = 'SEU_USER_ID';
+```
+
+### 6. Ative uma assinatura (para desenvolvimento)
+
+```sql
+UPDATE public.subscriptions
+SET status = 'active', plan = 'yearly', expires_at = NOW() + INTERVAL '1 year'
+WHERE user_id = 'SEU_USER_ID';
+```
+
+### 7. Execute
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📂 Estrutura do Projeto
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── (public)/          # Landing page
+│   ├── (auth)/            # Login, Cadastro, Recuperar senha
+│   ├── (dashboard)/       # Dashboard, Cursos, Comunidade, Calendário
+│   ├── (admin)/           # Painel administrativo
+│   ├── upgrade/           # Página de upgrade de assinatura
+│   └── api/               # API routes (progress, posts, comments, likes)
+├── components/
+│   ├── landing/           # Componentes da landing page
+│   ├── dashboard/         # Sidebar, cards
+│   └── community/         # Posts, comentários
+├── lib/
+│   ├── supabase/          # Clients (browser, server, admin)
+│   ├── utils.ts           # Funções utilitárias
+│   └── constants.ts       # Constantes da app
+├── hooks/                 # Custom hooks (useUser, useProgress, useSubscription)
+├── types/                 # TypeScript types
+└── middleware.ts           # Auth + Subscription middleware
+```
 
-## Learn More
+## 🔐 Segurança
 
-To learn more about Next.js, take a look at the following resources:
+- **Middleware** protege todas as rotas privadas
+- **Supabase Auth** com cookies HTTP-only
+- **RLS Policies** em todas as tabelas
+- **Session refresh** automático via middleware
+- Verificação de role `admin` para rotas admin
+- Verificação de assinatura `active` para conteúdos
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🎨 Design
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Tema escuro premium (inspirado em Netflix/Skool)
+- Paleta: Vinho (#8B1A4A → #C62E65) + Dourado (#D4A853 → #F0C674)
+- Glassmorphism, glow effects, micro-animações
+- Totalmente responsivo
 
-## Deploy on Vercel
+## 🚢 Deploy na Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Push para o GitHub
+2. Conecte no [Vercel](https://vercel.com)
+3. Configure as variáveis de ambiente
+4. Deploy!
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📋 Funcionalidades
+
+| Feature | Status |
+|---------|--------|
+| Landing page moderna | ✅ |
+| Auth (email + Google) | ✅ |
+| Middleware de autenticação | ✅ |
+| Sistema de assinaturas | ✅ |
+| CRUD de cursos | ✅ |
+| CRUD de módulos e aulas | ✅ |
+| Player de vídeo (Bunny Stream) | ✅ |
+| Progresso de aulas | ✅ |
+| Dashboard do aluno | ✅ |
+| Comunidade (posts, likes, comments) | ✅ |
+| Calendário de eventos | ✅ |
+| Painel admin completo | ✅ |
+| Schema SQL + RLS | ✅ |
+| Vercel-ready | ✅ |
